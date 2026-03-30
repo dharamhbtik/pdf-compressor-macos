@@ -10,6 +10,11 @@ on:
         required: true
         default: '1.0.0'
 
+# IMPORTANT: These permissions are required for creating releases
+permissions:
+  contents: write
+  actions: read
+  
 env:
   APP_NAME: PDFCompressor
 
@@ -21,6 +26,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
       
     - name: Setup Xcode
       uses: maxim-lobanov/setup-xcode@v1
@@ -49,7 +56,14 @@ jobs:
         # Copy binary
         cp "$BINARY" "$APP_DIR/Contents/MacOS/"
         
-        # Create Info.plist
+        # Create Info.plist with proper version
+        VERSION="${{ github.ref_name }}"
+        if [ -z "$VERSION" ]; then
+          VERSION="v${{ github.event.inputs.version }}"
+        fi
+        # Remove 'v' prefix if present for CFBundleShortVersionString
+        CLEAN_VERSION=$(echo "$VERSION" | sed 's/^v//')
+        
         cat > "$APP_DIR/Contents/Info.plist" << EOF
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -68,7 +82,7 @@ jobs:
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>CFBundleShortVersionString</key>
-            <string>${{ github.ref_name != '' && github.ref_name || inputs.version }}</string>
+            <string>$CLEAN_VERSION</string>
             <key>CFBundleVersion</key>
             <string>1</string>
             <key>LSApplicationCategoryType</key>
@@ -84,15 +98,28 @@ jobs:
         # Create PkgInfo
         echo "APPL????" > "$APP_DIR/Contents/PkgInfo"
         
-        # Make executable
-        chmod +x "$APP_DIR/Contents/MacOS/${{ env.APP_NAME }}"
+        # Make executable with proper permissions
+        chmod 755 "$APP_DIR/Contents/MacOS/${{ env.APP_NAME }}"
         
-        # Create zip
-        zip -r "${{ env.APP_NAME }}.zip" "$APP_DIR"
+        # Ad-hoc code sign the binary (required for macOS to not show as corrupted)
+        codesign --force --deep --sign - "$APP_DIR/Contents/MacOS/${{ env.APP_NAME }}"
+        
+        # Sign the entire app bundle
+        codesign --force --deep --sign - "$APP_DIR"
+        
+        # Verify signing
+        codesign -vv "$APP_DIR"
+        
+        # Create zip (preserving symlinks and permissions)
+        zip -r "${{ env.APP_NAME }}.zip" "$APP_DIR" -y
         
         # Verify
         ls -la "${{ env.APP_NAME }}.zip"
-        unzip -l "${{ env.APP_NAME }}.zip"
+        echo "--- App bundle structure ---"
+        ls -laR "$APP_DIR"
+        echo "--- Binary info ---"
+        file "$APP_DIR/Contents/MacOS/${{ env.APP_NAME }}"
+        codesign -dv "$APP_DIR" 2>&1 || true
         
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
@@ -105,25 +132,28 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
       uses: softprops/action-gh-release@v2
       with:
-        name: PDF Compressor ${{ github.ref_name != '' && github.ref_name || format('v{0}', inputs.version) }}
-        tag_name: ${{ github.ref_name != '' && github.ref_name || format('v{0}', inputs.version) }}
+        name: PDF Compressor ${{ github.ref_name != '' && github.ref_name || format('v{0}', github.event.inputs.version) }}
+        tag_name: ${{ github.ref_name != '' && github.ref_name || format('v{0}', github.event.inputs.version) }}
         files: ${{ env.APP_NAME }}.zip
         generate_release_notes: true
         body: |
           ## PDF Compressor for macOS
           
           ### Download
-          ⬇️ **PDFCompressor.zip** (see below)
+          ⬇️ **PDFCompressor.zip** (see Assets below)
           
           ### System Requirements
           - macOS 13.0 (Ventura) or later
           - Apple Silicon (M1/M2/M3) or Intel Mac
           
           ### Installation
-          1. Download `PDFCompressor.zip`
+          1. Download `PDFCompressor.zip` from Assets below
           2. Double-click to extract
-          3. Drag `PDFCompressor.app` to Applications folder
-          4. First launch: Right-click → Open (bypass Gatekeeper)
+          3. Drag `PDFCompressor.app` to your Applications folder
+          4. **First launch only**: Right-click the app → Click "Open" (bypass Gatekeeper security warning)
+          
+          ### Why the security warning?
+          This app is not signed with an Apple Developer certificate (which costs $99/year). The app is safe to use - you can verify the source code in this repository.
           
           ### Key Features
           - ✅ Compress any PDF to any size (5MB → 50KB possible)
