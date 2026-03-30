@@ -137,42 +137,72 @@ jobs:
         files: ${{ env.APP_NAME }}.zip
         generate_release_notes: true
         body: |
-          ## PDF Compressor for macOS
+          ## PDF Compressor for macOS ${{ github.ref_name != '' && github.ref_name || format('v{0}', github.event.inputs.version) }}
           
-          ### Download
-          ⬇️ **PDFCompressor.zip** (see Assets below)
+          ### 📥 Download
+          Download `PDFCompressor.zip` from **Assets** section below.
           
-          ### System Requirements
-          - macOS 13.0 (Ventura) or later
-          - Apple Silicon (M1/M2/M3) or Intel Mac
+          ---
           
-          ### Installation
-          1. Download `PDFCompressor.zip` from Assets below
-          2. Double-click to extract
-          3. Drag `PDFCompressor.app` to your Applications folder
-          4. **First launch only**: Right-click the app → Click "Open" (bypass Gatekeeper security warning)
+          ### 🚀 Quick Start
           
-          ### Why the security warning?
-          This app is not signed with an Apple Developer certificate (which costs $99/year). The app is safe to use - you can verify the source code in this repository.
+          1. Download & unzip `PDFCompressor.zip`
+          2. Drag `PDFCompressor.app` to **Applications** folder
+          3. **⚠️ IMPORTANT - First Launch:**
+             - **Right-click** the app → Click **"Open"**
+             - Click **"Open"** again in the security dialog
           
-          ### Key Features
-          - ✅ Compress any PDF to any size (5MB → 50KB possible)
-          - ✅ 5 quality levels: Maximum, High, Medium, Low, Extreme
-          - ✅ Native SwiftUI interface with drag & drop
+          ---
+          
+          ### ⚠️ "Cannot Verify" / Security Warning?
+          
+          This is **normal** for unsigned open-source apps. Apple requires a $99/year certificate.
+          
+          **3 ways to open:**
+          
+          **Method 1 - Right-click (Easiest):**
+          ```
+          Right-click app → Open → Open
+          ```
+          
+          **Method 2 - System Settings:**
+          1. Open System Settings → Privacy & Security
+          2. Scroll to Security section
+          3. Find "PDFCompressor was blocked"
+          4. Click "Open Anyway"
+          
+          **Method 3 - Terminal (100% works):**
+          ```bash
+          xattr -cr /Applications/PDFCompressor.app
+          ```
+          
+          ---
+          
+          ### 💡 Features
+          - ✅ Compress PDFs to **any size** (MBs to KBs)
+          - ✅ 5 quality levels: Maximum → Extreme
+          - ✅ Native macOS SwiftUI interface
+          - ✅ Drag & drop support
           - ✅ Live PDF preview
-          - ✅ No third-party libraries - 100% native
+          - ✅ **100% native** - no third-party libraries
           
-          ### Usage
+          ### 📋 Usage
           1. Open the app
-          2. Select a PDF (drag & drop or browse)
-          3. Choose compression mode:
-             - **Target Size**: Set exact file size (e.g., 1MB)
+          2. Select PDF (drag & drop or browse)
+          3. Choose mode:
+             - **Target Size**: Exact file size (e.g., 500KB)
              - **Percentage**: Reduce by % (e.g., 80%)
-             - **Quality**: Pick preset level
-          4. Click "Compress PDF"
-          5. Save the compressed file
+             - **Quality**: Preset levels
+          4. Click **Compress PDF**
+          5. Save compressed file
           
-          ### Building from Source
+          ### 🖥️ System Requirements
+          - macOS 13.0+ (Ventura or later)
+          - Apple Silicon or Intel Mac
+          
+          ---
+          
+          ### 🛠️ Build from Source
           ```bash
           git clone https://github.com/${{ github.repository }}.git
           cd pdf-compressor-macos

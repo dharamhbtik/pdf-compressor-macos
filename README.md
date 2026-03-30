@@ -18,6 +18,35 @@ A professional **macOS PDF compression app** built with SwiftUI that reduces PDF
 
 ## Installation
 
+### Download Pre-built App
+
+Download from [Releases](../../releases) - Look for `PDFCompressor.zip` in the latest release.
+
+### ⚠️ Gatekeeper Security Warning (Important!)
+
+Since this app is not signed with an Apple Developer certificate, macOS will show a security warning on first launch. This is normal and expected.
+
+**To open the app:**
+
+#### Option 1: Right-click Open (Easiest)
+1. **Right-click** on `PDFCompressor.app` in Applications
+2. Click **"Open"** 
+3. Click **"Open"** again in the security dialog
+
+#### Option 2: System Settings
+1. Open **System Settings** → **Privacy & Security**
+2. Scroll to **Security** section
+3. Find message: *"PDFCompressor was blocked..."
+4. Click **"Open Anyway"**
+
+#### Option 3: Terminal (Always works)
+```bash
+xattr -cr /Applications/PDFCompressor.app
+```
+Then double-click to open normally.
+
+> **Why this happens:** Apple requires a $99/year Developer certificate to sign apps. This app is open-source and safe - you can verify all code in this repository.
+
 ### Requirements
 - macOS 13.0 (Ventura) or later
 - Xcode 15.0+ (for building from source)
